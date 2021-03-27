@@ -9,8 +9,8 @@ Quadruped spider-like robot
  - HC-06/HC-05 Bluetooth module
  
 ### 3dModels that you need
- 1x Backbone
- 2x Hip
- 4x Leg
- 8x Shoulder
- 8X Servo_button (optional)
+ - 1x Backbone
+ - 2x Hip
+ - 4x Leg
+ - 8x Shoulder
+ - 8X Servo_button (optional)
