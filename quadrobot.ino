@@ -46,15 +46,21 @@ int get_pos(int leg, int pos) {
     return pos;
 }
 
-void rotate(int leg, int pos) {
+void rotate_servo(int leg, int pos) {
     legs[leg].write(pos);
     positions[leg] = pos;
 }
 
 void write_to_all(int pos) {
     for (int i = 0; i < 8; i++) {
-        rotate(i, get_pos(i, pos));
-        delay(25);
+        rotate_servo(i, get_pos(i, pos));
+        delay(5);
+    }
+}
+
+void write_to_bottom(int pos) {
+    for (int i = 1, j = 0; j < 4; i+=2, j++) {
+        rotate_servo(i, get_pos(i, pos));
     }
 }
 
@@ -76,14 +82,14 @@ void setup() {
 
 void move_forward(int leg, int pos, int speed) {
     for (int i = positions[leg]; i < pos; i++) {
-        rotate(leg, i);
+        rotate_servo(leg, i);
         delay(speed);
     }
 }
 
 void move_backward(int leg, int pos, int speed) {
     for (int i = positions[leg]; i > pos; i--) {
-        rotate(leg, i);
+        rotate_servo(leg, i);
         delay(speed);
     }
 }
@@ -98,66 +104,135 @@ void move(int leg, int p, int speed) {
             move_backward(leg, pos, speed);
         }
     }
+    Serial.print(pos);
+    Serial.print('\n');
 }
 
-void f_leg_center(int l, int s) {
-    move(l, 50, s);
+// movement
+// if movement forward, use default positions
+// if not, invert positions for the same movement back
+
+// center give the best balance after one leg movement
+
+void f_leg_center(int l, int s, bool i) {
+    int pos = 50;
+    if (i) 
+        pos = invert(pos);
+    
+    move(l, pos, s);
 }
 
-void b_leg_center(int l, int s) {
- move(l, 70, s); 
+void b_leg_center(int l, int s, bool i) {
+    int pos = 70;
+    if (i) 
+        pos = invert(pos);
+    
+    move(l, pos, s);
 }
 
-void f_leg_forward(int l, int s) {
+void f_leg_step(int l, int s, bool i) {
+    int pos = 135;
+    if (i) 
+        pos = invert(pos);
+
     move(l+1, 135, s);
-    move(l, 135, s);
+    move(l, pos, s);
     move(l+1, 90, s);
 }
 
-void b_leg_forward(int l, int s) {
+void b_leg_step(int l, int s, bool i) {
+    int pos = 135;
+    if (i) 
+        pos = invert(pos);
+    
     move(l+1, 135, s);
-    move(l, 170, s);
+    move(l, pos, s);
     move(l+1, 90, s);
 }
 
 void step_forward(int s) {
-    b_leg_center(2, s);
-    b_leg_forward(0, s);
-    f_leg_center(4, s);
-    f_leg_forward(6, s);
+    b_leg_center(2, s, false);
+    b_leg_step(0, s, false);
+    f_leg_center(4, s, false);
+    f_leg_step(6, s, false);
 
-    b_leg_center(0, s);
-    b_leg_forward(2, s);
-    f_leg_center(6, s);
-    f_leg_forward(4, s);
+    b_leg_center(0, s, false);
+    b_leg_step(2, s, false);
+    f_leg_center(6, s, false);
+    f_leg_step(4, s, false);
+}
+
+void step_backward(int s) {
+    f_leg_center(2, s, true);
+    f_leg_step(0, s, true);
+    b_leg_center(4, s, true);
+    b_leg_step(6, s, true);
+
+    f_leg_center(0, s, true);
+    f_leg_step(2, s, true);
+    b_leg_center(6, s, true);
+    b_leg_step(4, s, true);
+}
+
+// rotation
+
+void rotate(int s, bool right) {
+    b_leg_center(2, s, right);
+    b_leg_step(0, s, right);
+    f_leg_center(4, s, right);
+    f_leg_step(6, s, !right);
+
+    b_leg_center(0, s, right);
+    b_leg_step(2, s, !right);
+    f_leg_center(6, s, right);
+    f_leg_step(4, s, right);
+}
+
+//
+
+void fall_down() {
+    write_to_bottom(135);
+}
+
+void stand_up() {
+    write_to_bottom(80);
 }
 
 void loop() {
 
-    for (;;) {
-        step_forward(2);
-        delay(50);
-    }
-
     if(Serial.available()) {
-        int l = 0;
-        int d = 0;
+        char c = 0;
         int s = 0;
+        int i = 0;
         char input[INPUT_SIZE + 1];
         byte size = Serial.readBytes(input, INPUT_SIZE);
         input[size] = 0;
 
         char* pch = strtok(input, " ");
         while (pch != 0) {
-            l = atoi(pch);
-            pch = strtok(NULL, " ");
-            d = atoi(pch);
+            c = pch[0];
             pch = strtok(NULL, " ");
             s = atoi(pch);
             pch = strtok(NULL, " ");
+            i = atoi(pch);                        
+            pch = strtok(NULL, " ");
         }
- 
-        move(l, d, s);
-    }
-  
+
+        for (int j = 0; j < i; j++) {
+            switch ( c ) {
+            case 'f':
+                step_forward(s);
+                break;
+            case 'b':
+                step_backward(s);
+                break;
+            case 'r':
+                rotate(s, true);
+                break;
+            case 'l':
+                rotate(s, false);
+                break;
+            }
+        }
+    } 
 }
