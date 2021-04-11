@@ -1,6 +1,9 @@
 #include <Servo.h>
+#include <SoftwareSerial.h>
+
 #define INPUT_SIZE 10
 
+SoftwareSerial BTSerial(1, 0); // RX | TX
 
 Servo lu1;
 Servo lu2;
@@ -76,6 +79,8 @@ void initialize() {
 void setup() {
 
     Serial.begin(9600);
+    BTSerial.begin(9600);
+    
     initialize();
 
 }
@@ -198,41 +203,92 @@ void stand_up() {
     write_to_bottom(80);
 }
 
+void command (int x, int y) {    
+    switch (x) {
+    case 1:
+        step_forward(5);
+        break;
+    case 2:
+        step_forward(3);
+        break;
+    case 3:
+        step_forward(1);
+        break;
+    case -1:
+        step_backward(5);
+        break;
+    case -2:
+        step_backward(3);
+        break;
+    case -3:
+        step_backward(1);
+        break;
+    }
+    switch (y) {
+    case 1:
+        rotate(5, true);
+        break;
+    case 2:
+        rotate(3, true);
+        break;
+    case 3:
+        rotate(1, true);
+        break;
+    case -1:
+        rotate(5, false);
+        break;
+    case -2:
+        rotate(3, false);
+        break;
+    case -3:
+        rotate(1, false);
+        break;
+    }
+}
+
 void loop() {
 
-    if(Serial.available()) {
-        char c = 0;
-        int s = 0;
-        int i = 0;
-        char input[INPUT_SIZE + 1];
-        byte size = Serial.readBytes(input, INPUT_SIZE);
-        input[size] = 0;
+   // Keep reading from HC-06 and send to Arduino Serial Monitor
+  if (BTSerial.available())
+    Serial.write(BTSerial.read());
+ 
+  // Keep reading from Arduino Serial Monitor and send to HC-06
+  if (Serial.available())
+  BTSerial.write(Serial.read());
 
-        char* pch = strtok(input, " ");
-        while (pch != 0) {
-            c = pch[0];
-            pch = strtok(NULL, " ");
-            s = atoi(pch);
-            pch = strtok(NULL, " ");
-            i = atoi(pch);                        
-            pch = strtok(NULL, " ");
-        }
+    /* if(Serial.available()) { */
+    /*     char c = 0; */
+    /*     int s = 0; */
+    /*     int i = 0; */
+    /*     char input[INPUT_SIZE + 1]; */
+    /*     byte size = Serial.readBytes(input, INPUT_SIZE); */
+    /*     input[size] = 0; */
 
-        for (int j = 0; j < i; j++) {
-            switch ( c ) {
-            case 'f':
-                step_forward(s);
-                break;
-            case 'b':
-                step_backward(s);
-                break;
-            case 'r':
-                rotate(s, true);
-                break;
-            case 'l':
-                rotate(s, false);
-                break;
-            }
-        }
-    } 
+    /*     char* pch = strtok(input, " "); */
+    /*     while (pch != 0) { */
+    /*         c = pch[0]; */
+    /*         pch = strtok(NULL, " "); */
+    /*         s = atoi(pch); */
+    /*         pch = strtok(NULL, " "); */
+    /*         i = atoi(pch);                         */
+    /*         pch = strtok(NULL, " "); */
+    /*     } */
+
+    /*     for (int j = 0; j < i; j++) { */
+    /*         switch ( c ) { */
+    /*         case 'f': */
+    /*             step_forward(s); */
+    /*             break; */
+    /*         case 'b': */
+    /*             step_backward(s); */
+    /*             break; */
+    /*         case 'r': */
+    /*             rotate(s, true); */
+    /*             break; */
+    /*         case 'l': */
+    /*             rotate(s, false); */
+    /*             break; */
+    /*         } */
+    /*     } */
+    /* }  */
 }
