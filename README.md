@@ -8,7 +8,7 @@ Quadruped spider-like robot
  - 8x SG90 servo
  - HC-06/HC-05 Bluetooth module
  
-### 3dModels that you need
+### Used 3dModels
  - 1x Backbone
  - 2x Hip
  - 4x Leg
